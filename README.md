@@ -2,7 +2,7 @@
 
 A real-time dashboard monitoring flood advisories and dam water levels across the Philippines, using data from PAG-ASA.
 
-![App Screenshot](https://imgur.com/nKWa4pM)
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/GTt0LIk"  ><a href="//imgur.com/a/GTt0LIk">n</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
 ![App Screenshot](https://imgur.com/cXpbGTF)
 ***
 
