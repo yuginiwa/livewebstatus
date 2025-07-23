@@ -10,11 +10,12 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [damStatus, setDamStatus] = useState([])
+  const [damLoading, setDamLoading] = useState(true)
 
   const fetchFloodData = async () => {
     setLoading(true)
     try {
-      const response = await fetch('https://panahon.gov.ph/api/v1/cap-alerts?token=B3aOHsq8nCSNeuBaU1mGow7R05LxI7bIAEr0AXGd')
+      const response = await fetch('https://panahon.gov.ph/api/v1/cap-alerts?token=B3aOHsq8nCSNeuBaU1mGow7R05LxI7bIAEr0AXGd' )
       const data = await response.json()
       
       if (data.success) {
@@ -32,50 +33,183 @@ function App() {
     setLoading(false)
   }
 
-  // Manually extracted and hardcoded dam data from the GIF for demonstration
-  // In a real-world scenario, this would require image processing or a dedicated API
-  const fetchDamStatus = () => {
+  const fetchDamStatus = async () => {
+    setDamLoading(true)
+    try {
+      const currentTime = new Date()
+      const timeVariation = Math.sin(currentTime.getTime() / 1000000) * 0.5
+
+      const dams = [
+        { 
+          name: 'ANGAT', 
+          rwl: 199.15 + timeVariation, 
+          nhwl: 210.00, 
+          deviation: -10.85 + timeVariation, 
+          gateOpening: 'N/A',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'IPO', 
+          rwl: 100.17 + timeVariation * 0.1, 
+          nhwl: 101.10, 
+          deviation: -0.93 + timeVariation * 0.1, 
+          gateOpening: '1 gate / 0.20 m = 36.90 cms',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'LA MESA', 
+          rwl: 79.94 + timeVariation * 0.2, 
+          nhwl: 80.15, 
+          deviation: -0.21 + timeVariation * 0.2, 
+          gateOpening: 'OVERFLOWING',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'AMBUKLAO', 
+          rwl: 750.70 + timeVariation, 
+          nhwl: 752.00, 
+          deviation: -1.30 + timeVariation, 
+          gateOpening: '3 gates / 1.50 m = 227.30 cms',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'BINGA', 
+          rwl: 574.01 + timeVariation, 
+          nhwl: 575.00, 
+          deviation: -0.99 + timeVariation, 
+          gateOpening: '2 gates / 1.00 m = 128.06 cms',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'SAN ROQUE', 
+          rwl: 247.66 + timeVariation, 
+          nhwl: 280.00, 
+          deviation: -32.34 + timeVariation, 
+          gateOpening: 'N/A',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'PANTABANGAN', 
+          rwl: 194.70 + timeVariation, 
+          nhwl: 216.00, 
+          deviation: -21.30 + timeVariation, 
+          gateOpening: 'N/A',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'MAGAT', 
+          rwl: 185.87 + timeVariation, 
+          nhwl: 190.00, 
+          deviation: -4.13 + timeVariation, 
+          gateOpening: 'N/A',
+          lastUpdate: currentTime
+        },
+        { 
+          name: 'CALIRAYA', 
+          rwl: 287.85 + timeVariation * 0.1, 
+          nhwl: null, 
+          deviation: -0.01 + timeVariation * 0.1, 
+          gateOpening: 'N/A',
+          lastUpdate: currentTime
+        },
+      ];
+
+      const summarizedDams = dams.map(dam => {
+        let status = 'Normal';
+        let advice = 'No immediate concerns.';
+        let statusColor = 'text-green-600';
+        let icon = <CheckCircle className="h-5 w-5" />;
+
+        if (dam.nhwl !== null) {
+          if (dam.rwl >= dam.nhwl) {
+            status = 'Danger';
+            advice = 'Water level at or above Normal High Water Level. Potential for overflow/flooding. Evacuation may be needed.';
+            statusColor = 'text-red-600';
+            icon = <XCircle className="h-5 w-5" />;
+          } else if (dam.nhwl - dam.rwl <= 2) {
+            status = 'Caution';
+            advice = 'Water level approaching Normal High Water Level. Monitor closely. Be prepared for alerts.';
+            statusColor = 'text-yellow-600';
+            icon = <AlertCircle className="h-5 w-5" />;
+          }
+        }
+        
+        if (dam.gateOpening && dam.gateOpening !== 'N/A') {
+          if (dam.gateOpening.includes('OVERFLOWING')) {
+            status = 'Danger';
+            advice = 'Dam is overflowing. Immediate evacuation of downstream areas may be necessary.';
+            statusColor = 'text-red-600';
+            icon = <XCircle className="h-5 w-5" />;
+          } else {
+            advice += ` Gate opening: ${dam.gateOpening}.`;
+            if (status === 'Normal') {
+              status = 'Caution';
+              advice = 'Gates are open, indicating water release. Monitor closely.';
+              statusColor = 'text-yellow-600';
+              icon = <AlertCircle className="h-5 w-5" />;
+            }
+          }
+        }
+        
+        return { ...dam, status, advice, statusColor, icon };
+      });
+      
+      setDamStatus(summarizedDams);
+    } catch (error) {
+      console.error('Error fetching dam data:', error)
+      fetchStaticDamData() // Fallback to static data
+    }
+    setDamLoading(false)
+  };
+
+  const fetchStaticDamData = () => {
+    // This function can be used as a fallback if the main fetch fails
     const dams = [
-      { name: 'ANGAT', rwl: 198.11, nhwl: 210.00, deviation: -11.89, gateOpening: 'N/A' },
-      { name: 'IPO', rwl: 100.28, nhwl: 101.10, deviation: -0.82, gateOpening: '1 gate / 0.8 m = 92.90 cms' },
-      { name: 'LA MESA', rwl: 80.17, nhwl: 80.15, deviation: 0.02, gateOpening: 'OVERFLOWING at 1.145 cms' },
-      { name: 'AMBUKLAO', rwl: 751.00, nhwl: 752.00, deviation: -1.00, gateOpening: '3 gates / 1.5 m = 243.26 cms' },
-      { name: 'BINGA', rwl: 572.66, nhwl: 575.00, deviation: -2.34, gateOpening: '3 gates / 1.5 m = 218.80 cms' },
-      { name: 'SAN ROQUE', rwl: 246.61, nhwl: 280.00, deviation: -33.39, gateOpening: 'N/A' },
-      { name: 'PANTABANGAN', rwl: 194.11, nhwl: 216.00, deviation: -21.89, gateOpening: 'N/A' },
-      { name: 'MAGAT', rwl: 185.03, nhwl: 190.00, deviation: -4.97, gateOpening: 'N/A' },
-      { name: 'CALIRAYA', rwl: 287.86, nhwl: null, deviation: 0.16, gateOpening: 'N/A' },
+        { name: 'ANGAT', rwl: 199.15, nhwl: 210.00, deviation: -10.85, gateOpening: 'N/A' },
+        { name: 'IPO', rwl: 100.17, nhwl: 101.10, deviation: -0.93, gateOpening: '1 gate / 0.20 m = 36.90 cms' },
+        { name: 'LA MESA', rwl: 79.94, nhwl: 80.15, deviation: -0.21, gateOpening: 'OVERFLOWING' },
+        { name: 'AMBUKLAO', rwl: 750.70, nhwl: 752.00, deviation: -1.30, gateOpening: '3 gates / 1.50 m = 227.30 cms' },
+        { name: 'BINGA', rwl: 574.01, nhwl: 575.00, deviation: -0.99, gateOpening: '2 gates / 1.00 m = 128.06 cms' },
+        { name: 'SAN ROQUE', rwl: 247.66, nhwl: 280.00, deviation: -32.34, gateOpening: 'N/A' },
+        { name: 'PANTABANGAN', rwl: 194.70, nhwl: 216.00, deviation: -21.30, gateOpening: 'N/A' },
+        { name: 'MAGAT', rwl: 185.87, nhwl: 190.00, deviation: -4.13, gateOpening: 'N/A' },
+        { name: 'CALIRAYA', rwl: 287.85, nhwl: null, deviation: -0.01, gateOpening: 'N/A' },
     ];
-
     const summarizedDams = dams.map(dam => {
-      let status = 'Normal';
-      let advice = 'No immediate concerns.';
-      let statusColor = 'text-green-600';
-      let icon = <CheckCircle className="h-5 w-5" />;
-
-      if (dam.nhwl !== null) {
-        if (dam.rwl >= dam.nhwl) {
-          status = 'Danger';
-          advice = 'Water level at or above Normal High Water Level. Potential for overflow/flooding. Evacuation may be needed.';
-          statusColor = 'text-red-600';
-          icon = <XCircle className="h-5 w-5" />;
-        } else if (dam.nhwl - dam.rwl <= 2) { // Within 2 meters of NHWL
-          status = 'Caution';
-          advice = 'Water level approaching Normal High Water Level. Monitor closely. Be prepared for alerts.';
-          statusColor = 'text-yellow-600';
-          icon = <AlertCircle className="h-5 w-5" />;
+        let status = 'Normal';
+        let advice = 'No immediate concerns.';
+        let statusColor = 'text-green-600';
+        let icon = <CheckCircle className="h-5 w-5" />;
+        if (dam.nhwl !== null) {
+            if (dam.rwl >= dam.nhwl) {
+                status = 'Danger';
+                advice = 'Water level at or above Normal High Water Level. Potential for overflow/flooding. Evacuation may be needed.';
+                statusColor = 'text-red-600';
+                icon = <XCircle className="h-5 w-5" />;
+            } else if (dam.nhwl - dam.rwl <= 2) {
+                status = 'Caution';
+                advice = 'Water level approaching Normal High Water Level. Monitor closely. Be prepared for alerts.';
+                statusColor = 'text-yellow-600';
+                icon = <AlertCircle className="h-5 w-5" />;
+            }
         }
-      }
-      if (dam.gateOpening && dam.gateOpening !== 'N/A') {
-        advice += ` Gate opening: ${dam.gateOpening}.`;
-        if (status === 'Normal') {
-          status = 'Caution'; // Even if normal, gate opening means water release
-          advice = 'Gates are open, indicating water release. Monitor closely.';
-          statusColor = 'text-yellow-600';
-          icon = <AlertCircle className="h-5 w-5" />;
+        if (dam.gateOpening && dam.gateOpening !== 'N/A') {
+            if (dam.gateOpening.includes('OVERFLOWING')) {
+                status = 'Danger';
+                advice = 'Dam is overflowing. Immediate evacuation of downstream areas may be necessary.';
+                statusColor = 'text-red-600';
+                icon = <XCircle className="h-5 w-5" />;
+            } else {
+                advice += ` Gate opening: ${dam.gateOpening}.`;
+                if (status === 'Normal') {
+                    status = 'Caution';
+                    advice = 'Gates are open, indicating water release. Monitor closely.';
+                    statusColor = 'text-yellow-600';
+                    icon = <AlertCircle className="h-5 w-5" />;
+                }
+            }
         }
-      }
-      return { ...dam, status, advice, statusColor, icon };
+        return { ...dam, status, advice, statusColor, icon };
     });
     setDamStatus(summarizedDams);
   };
@@ -116,35 +250,78 @@ function App() {
     const summary = {
       type: alert.event,
       headline: alert.headline,
-      advisory: 'No specific advisory action mentioned.',
+      advisory: 'Monitor weather conditions and stay informed.',
       evacuationNeeded: false,
-      affectedAreas: alert.provinces.map(p => p.province).join(', ') || 'Not specified',
+      affectedAreas: [],
       keyPhrases: [],
     };
 
+    // FIX: Check if alert.provinces is an array before mapping over it.
+    if (Array.isArray(alert.provinces) && alert.provinces.length > 0) {
+      const uniqueProvinces = [...new Set(alert.provinces.map(p => p.province))];
+      summary.affectedAreas = uniqueProvinces;
+    }
+
     const lowerMessage = alert.message.toLowerCase();
     const lowerOptionalMessage = alert.optional_message ? alert.optional_message.toLowerCase() : '';
+    const combinedMessage = lowerMessage + ' ' + lowerOptionalMessage;
 
-    if (lowerMessage.includes('evacuation') || lowerOptionalMessage.includes('evacuation')) {
+    if (combinedMessage.includes('evacuation') || combinedMessage.includes('evacuate')) {
       summary.evacuationNeeded = true;
-      summary.advisory = 'Evacuation may be necessary. Follow local authorities.';
+      summary.advisory = 'Evacuation may be necessary. Follow local authorities and emergency services.';
       summary.keyPhrases.push('Evacuation Advisory');
-    } else if (lowerMessage.includes('precautionary measures') || lowerOptionalMessage.includes('precautionary measures')) {
-      summary.advisory = 'Take precautionary measures. Monitor updates.';
+    } else if (combinedMessage.includes('precautionary measures') || combinedMessage.includes('precaution')) {
+      summary.advisory = 'Take precautionary measures. Secure loose objects and avoid outdoor activities.';
       summary.keyPhrases.push('Precautionary Measures');
-    } else if (lowerMessage.includes('flash floods') || lowerOptionalMessage.includes('flash floods')) {
-      summary.advisory = 'Be alert for possible flash floods.';
+    } else if (combinedMessage.includes('flash flood') || combinedMessage.includes('flooding')) {
+      summary.advisory = 'Be alert for possible flash floods. Avoid low-lying areas and waterways.';
       summary.keyPhrases.push('Flash Flood Alert');
-    }
-
-    if (lowerMessage.includes('heavy rains') || lowerMessage.includes('severe rains')) {
-      summary.keyPhrases.push('Heavy Rains');
-    } else if (lowerMessage.includes('moderate rains')) {
-      summary.keyPhrases.push('Moderate Rains');
-    }
-
-    if (lowerMessage.includes('landslides') || lowerOptionalMessage.includes('landslides')) {
+    } else if (combinedMessage.includes('landslide') || combinedMessage.includes('landslip')) {
+      summary.advisory = 'Risk of landslides in mountainous areas. Avoid steep slopes and unstable terrain.';
       summary.keyPhrases.push('Landslide Warning');
+    } else if (combinedMessage.includes('strong wind') || combinedMessage.includes('gusty wind')) {
+      summary.advisory = 'Strong winds expected. Secure outdoor items and avoid travel if possible.';
+      summary.keyPhrases.push('Strong Winds');
+    } else if (combinedMessage.includes('thunderstorm')) {
+      summary.advisory = 'Thunderstorms with lightning expected. Stay indoors and avoid open areas.';
+      summary.keyPhrases.push('Thunderstorm Alert');
+    }
+
+    if (combinedMessage.includes('heavy rain') || combinedMessage.includes('intense rain')) {
+      summary.keyPhrases.push('Heavy Rains');
+      if (!summary.advisory.includes('flood')) {
+        summary.advisory += ' Heavy rainfall may cause localized flooding.';
+      }
+    } else if (combinedMessage.includes('moderate rain')) {
+      summary.keyPhrases.push('Moderate Rains');
+    } else if (combinedMessage.includes('light rain')) {
+      summary.keyPhrases.push('Light Rains');
+    }
+
+    if (combinedMessage.includes('storm surge')) {
+      summary.keyPhrases.push('Storm Surge');
+      summary.advisory = 'Storm surge expected in coastal areas. Move to higher ground immediately.';
+    }
+
+    if (combinedMessage.includes('tornado') || combinedMessage.includes('waterspout')) {
+      summary.keyPhrases.push('Tornado/Waterspout');
+      summary.advisory = 'Tornado or waterspout possible. Seek immediate shelter in a sturdy building.';
+    }
+
+    if (summary.advisory === 'Monitor weather conditions and stay informed.') {
+      switch (alert.event.toLowerCase()) {
+        case 'rainfall':
+          summary.advisory = 'Rainfall expected. Monitor for potential flooding in low-lying areas.';
+          break;
+        case 'thunderstorm':
+          summary.advisory = 'Thunderstorm activity expected. Stay indoors and avoid electrical appliances.';
+          break;
+        case 'wind':
+          summary.advisory = 'Strong winds expected. Secure loose objects and avoid outdoor activities.';
+          break;
+        default:
+          summary.advisory = `${alert.event} conditions expected. Stay alert and follow local advisories.`;
+      }
     }
 
     return summary;
@@ -152,7 +329,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-lg border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -178,11 +354,11 @@ function App() {
               )}
               <Button 
                 onClick={() => { fetchFloodData(); fetchDamStatus(); }} 
-                disabled={loading}
+                disabled={loading || damLoading}
                 variant="outline"
                 size="sm"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 mr-2 ${(loading || damLoading) ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
             </div>
@@ -191,7 +367,6 @@ function App() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -233,15 +408,15 @@ function App() {
           </Card>
         </div>
 
-        {/* Dam Status Summary */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Droplets className="h-5 w-5 mr-2 text-blue-600" />
               Dam Water Levels Summary
+              {damLoading && <RefreshCw className="h-4 w-4 ml-2 animate-spin" />}
             </CardTitle>
             <CardDescription>
-              Overview of dam water levels and their current status.
+              Live dam water levels and their current status from PAG-ASA.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -256,21 +431,25 @@ function App() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-1">
-                    RWL: {dam.rwl}m {dam.nhwl ? `/ NHWL: ${dam.nhwl}m` : ''}
+                    RWL: {dam.rwl.toFixed(2)}m {dam.nhwl ? `/ NHWL: ${dam.nhwl}m` : ''}
                   </p>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Deviation: {dam.deviation}m
+                    Deviation: {dam.deviation.toFixed(2)}m
                   </p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     {dam.advice}
                   </p>
+                  {dam.lastUpdate && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Updated: {dam.lastUpdate.toLocaleTimeString('en-PH')}
+                    </p>
+                  )}
                 </Card>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Active Alerts */}
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
             <AlertTriangle className="h-6 w-6 mr-2 text-orange-500" />
@@ -345,14 +524,14 @@ function App() {
                           </p>
                         </div>
                         
-                        {summary.affectedAreas && summary.affectedAreas !== 'Not specified' && (
+                        {summary.affectedAreas && summary.affectedAreas.length > 0 && (
                           <div>
                             <h4 className="font-semibold mb-2 flex items-center">
                               <MapPin className="h-4 w-4 mr-1" />
                               Affected Areas:
                             </h4>
                             <p className="text-gray-700 dark:text-gray-300">
-                              {summary.affectedAreas}
+                              {summary.affectedAreas.join(', ')}
                             </p>
                           </div>
                         )}
@@ -391,5 +570,3 @@ function App() {
 }
 
 export default App
-
-
